@@ -61,7 +61,7 @@ public class PacketManagerConfig {
      */
     @PostConstruct
     public void validateReferenceReaderProvider() throws ClassNotFoundException {
-        logger.info(testProperty);
+        logger.info("CHECKING THE PROPERTY FROM RANCHER : " + testProperty);
             Set<String> readerProviders = PacketHelper.getReaderProvider(readerConfiguration());
             if (!CollectionUtils.isEmpty(readerProviders)) {
                 for (String className : readerProviders) {
