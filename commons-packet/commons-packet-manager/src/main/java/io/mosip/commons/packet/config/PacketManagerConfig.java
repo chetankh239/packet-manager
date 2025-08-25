@@ -7,6 +7,7 @@ import io.mosip.commons.packet.util.PacketHelper;
 import io.mosip.commons.packet.util.PacketManagerLogger;
 import io.mosip.kernel.core.logger.spi.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.ApplicationContext;
@@ -50,6 +51,9 @@ public class PacketManagerConfig {
         return new HashMap<>();
     }
 
+    @Value("${mosip.test.property}")
+    String testProperty;
+
     /**
      * Validate the reference provider.
      *
@@ -57,6 +61,7 @@ public class PacketManagerConfig {
      */
     @PostConstruct
     public void validateReferenceReaderProvider() throws ClassNotFoundException {
+        logger.info(testProperty);
             Set<String> readerProviders = PacketHelper.getReaderProvider(readerConfiguration());
             if (!CollectionUtils.isEmpty(readerProviders)) {
                 for (String className : readerProviders) {
