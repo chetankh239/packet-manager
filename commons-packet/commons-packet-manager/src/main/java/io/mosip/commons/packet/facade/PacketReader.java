@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Lazy;
@@ -40,6 +41,27 @@ public class PacketReader {
 
 	@Autowired
 	private PacketKeeper packetKeeper;
+
+    /*
+     * Note on enabling info cache:
+     *
+     * Previously, issues were observed when the info cache was not cleared
+     * while processing a BIOMETRIC_CORRECTION packet for a given RID, since
+     * the correction packet is uploaded with the same RID.
+     *
+     * In production, we can enable the info cache for performance improvements,
+     * provided the following assumptions hold true:
+     *
+     * 1. By the time a BIOMETRIC_CORRECTION packet is uploaded, the info cache
+     *    for that RID will already be cleared. This is because, in production,
+     *    BIOMETRIC_CORRECTION packets are typically uploaded after some time,
+     *    and the cache duration is relatively short — reducing the risk of stale data.
+     *
+     * 2. Packet data is not modified "in-flight" (i.e., during processing),
+     *    ensuring that caching will not introduce inconsistencies.
+     */
+    @Value("${packetmanager.cache.info.enabled:false}")
+    private boolean isInfoCacheEnabled;
 
     /**
      * Get a field from identity file
@@ -114,12 +136,13 @@ public class PacketReader {
      * @param process    : the process
      * @return BiometricRecord : the biometric record
      */
+
+    // The caching is removed from this method and moved to the implementation class as part of MOSIP-42180 JIRA. If we use the older implementation class logic (Customized Packet Reader Implementation) then caching logic will not work because of newly introduced getBiometric() method in IPacketReader interface i.e. we need to implement the caching logic in new getBiometric() method in implementation class.
     @PreAuthorize("hasRole('BIOMETRIC_READ')")
-    @Cacheable(value = "packets", key = "'biometrics'.concat('-').#id.concat('-').concat(#person).concat('-').concat(#modalities).concat('-').concat(#source).concat('-').concat(#process)", condition = "#bypassCache == false")
     public BiometricRecord getBiometric(String id, String person, List<String> modalities, String source, String process, boolean bypassCache) {
         LOGGER.info(PacketManagerLogger.SESSIONID, PacketManagerLogger.REGISTRATIONID, id,
                 "getBiometric for source : " + source + " process : " + process);
-        return getProvider(source, process).getBiometric(id, person, modalities, source, process);
+        return getProvider(source, process).getBiometric(id, person, modalities, source, process, bypassCache);
     }
 
     /**
@@ -147,6 +170,7 @@ public class PacketReader {
      * @return
      */
     @PreAuthorize("hasRole('DATA_READ')")
+    @Cacheable(value = "info", key = "#id", condition = "@packetReader.isInfoCacheEnabled()")
     public List<ObjectDto> info(String id) {
         LOGGER.info(PacketManagerLogger.SESSIONID, PacketManagerLogger.REGISTRATIONID, id,
                 "info called");
@@ -225,6 +249,11 @@ public class PacketReader {
         }
 
         return provider;
+    }
+
+    public boolean isInfoCacheEnabled() {
+        LOGGER.info("isInfoCacheEnabled : {}", isInfoCacheEnabled);
+        return isInfoCacheEnabled;
     }
 
 }
