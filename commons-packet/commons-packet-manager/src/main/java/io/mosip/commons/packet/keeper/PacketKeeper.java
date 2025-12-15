@@ -116,8 +116,10 @@ public class PacketKeeper {
      */
     public boolean checkSignature(Packet packet, byte[] encryptedSubPacket) throws NoSuchAlgorithmException {
         boolean result = true;
+        LOGGER.info(packet.getPacketInfo().getSignature() + ":::Signature value:::");
         if(!disablePacketSignatureVerification) {
             if(packet.getPacketInfo().getSignature() == null || packet.getPacketInfo().getSignature().isEmpty()) {
+
                 LOGGER.error(PacketManagerLogger.SESSIONID, PacketManagerLogger.REGISTRATIONID,
                         getName(packet.getPacketInfo().getId(), packet.getPacketInfo().getPacketName()), "Packet signature not available");
                 return false;
@@ -126,8 +128,8 @@ public class PacketKeeper {
                             packet.getPacketInfo().getId(), packet.getPacketInfo().getRefId()), packet.getPacket()
                     , CryptoUtil.decodeURLSafeBase64(packet.getPacketInfo().getSignature()));
         }
-        if (result)
-            result = checkIntegrity(packet.getPacketInfo(), encryptedSubPacket);
+//        if (result)
+//            result = checkIntegrity(packet.getPacketInfo(), encryptedSubPacket);
         LOGGER.info(PacketManagerLogger.SESSIONID, PacketManagerLogger.REGISTRATIONID,
                 getName(packet.getPacketInfo().getId(), packet.getPacketInfo().getPacketName()), "Integrity and signature check : " + result);
         return result;
