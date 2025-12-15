@@ -100,6 +100,8 @@ public class PacketKeeper {
      */
     public boolean checkIntegrity(PacketInfo packetInfo, byte[] encryptedSubPacket) throws NoSuchAlgorithmException {
         String hash = CryptoUtil.encodeToURLSafeBase64(HMACUtils2.generateHash(encryptedSubPacket));
+        LOGGER.info(hash + "::Hash value::");
+        LOGGER.info(packetInfo.getEncryptedHash() + ":: ENcrypted hash ::");
         boolean result = hash.equals(packetInfo.getEncryptedHash());
         LOGGER.info(PacketManagerLogger.SESSIONID, PacketManagerLogger.REGISTRATIONID,
                 getName(packetInfo.getId(), packetInfo.getPacketName()), "Integrity check : " + result);
@@ -128,8 +130,9 @@ public class PacketKeeper {
                             packet.getPacketInfo().getId(), packet.getPacketInfo().getRefId()), packet.getPacket()
                     , CryptoUtil.decodeURLSafeBase64(packet.getPacketInfo().getSignature()));
         }
-//        if (result)
-//            result = checkIntegrity(packet.getPacketInfo(), encryptedSubPacket);
+        if (result)
+             checkIntegrity(packet.getPacketInfo(), encryptedSubPacket);
+
         LOGGER.info(PacketManagerLogger.SESSIONID, PacketManagerLogger.REGISTRATIONID,
                 getName(packet.getPacketInfo().getId(), packet.getPacketInfo().getPacketName()), "Integrity and signature check : " + result);
         return result;
